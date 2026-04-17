@@ -56,6 +56,7 @@
 
     function App() {
       const [apiKey, setApiKey] = useState('');
+      const [isKeySaved, setIsKeySaved] = useState(false);
       const [showApiKeyInput, setShowApiKeyInput] = useState(false);
       const [dragActive, setDragActive] = useState(false);
       const [isProcessing, setIsProcessing] = useState(false);
@@ -65,14 +66,33 @@
 
       useEffect(() => {
         const savedKey = localStorage.getItem('gemini_api_key_invoices');
-        if (savedKey) setApiKey(savedKey);
-        else setShowApiKeyInput(true);
+        if (savedKey) {
+          setApiKey(savedKey);
+          setIsKeySaved(true);
+        } else {
+          setShowApiKeyInput(true);
+        }
       }, []);
 
-      const saveApiKey = (e) => {
-        const val = e.target.value;
-        setApiKey(val);
-        localStorage.setItem('gemini_api_key_invoices', val);
+      const handleApiKeyChange = (e) => {
+        setApiKey(e.target.value);
+        if (isKeySaved) setIsKeySaved(false);
+      };
+
+      const saveApiKey = () => {
+        if (!apiKey) return;
+        if (window.confirm("Der Gemini API Key wird im lokalen Speicher (LocalStorage) deines Browsers abgelegt.\nMöchtest du fortfahren?")) {
+          localStorage.setItem('gemini_api_key_invoices', apiKey);
+          setIsKeySaved(true);
+        }
+      };
+
+      const clearApiKey = () => {
+        if (window.confirm("Bist du sicher, dass du deinen gespeicherten API Key löschen möchtest?")) {
+          localStorage.removeItem('gemini_api_key_invoices');
+          setApiKey('');
+          setIsKeySaved(false);
+        }
       };
 
       // Drag & Drop Handlers
@@ -240,13 +260,23 @@ ${text.substring(0, 30000)}
                <input 
                  type={showApiKeyInput ? "text" : "password"}
                  value={apiKey}
-                 onChange={saveApiKey}
+                 onChange={handleApiKeyChange}
                  placeholder="Gemini API Key..."
                  className="bg-transparent border-none text-xs text-white outline-none w-[200px] placeholder:text-gray-500"
                />
                <button onClick={() => setShowApiKeyInput(!showApiKeyInput)} className="text-[10px] uppercase text-gray-400 hover:text-white transition-colors tracking-widest font-medium">
                  {showApiKeyInput ? 'Hide' : 'Show'}
                </button>
+               {apiKey && !isKeySaved && (
+                 <button onClick={saveApiKey} className="text-[10px] uppercase text-purple-400 hover:text-purple-300 transition-colors tracking-widest font-medium border-l border-white/10 pl-3">
+                   Save
+                 </button>
+               )}
+               {isKeySaved && (
+                 <button onClick={clearApiKey} className="text-[10px] uppercase text-red-500 hover:text-red-400 transition-colors tracking-widest font-medium border-l border-white/10 pl-3">
+                   Clear
+                 </button>
+               )}
              </div>
           </div>
 
