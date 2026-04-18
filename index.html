@@ -129,12 +129,18 @@
 
       // Sanitize Filename
       const sanitizeFilename = (str) => {
-        if (!str || str === "unbekannt") return "unbekannt";
-        // Remove characters that aren't letters, numbers, or safe symbols, replace spaces with underscores
-        return str.toString()
-          .replace(/[\\/:*?"<>|\s]+/g, '_')
-          .replace(/_+/g, '_') // Avoid double underscores
+        if (!str || str === "unbekannt" || !str.toString) return "unbekannt";
+        
+        // Remove typical company suffixes
+        let cleaned = str.toString()
+          .replace(/\b(GmbH|Co\.?\s*KG|AG|UG|haftungsbeschränkt|Ltd\.?|Inc\.?)\b/gi, '')
           .trim();
+          
+        // Remove characters that aren't letters, numbers, or safe symbols, replace spaces with underscores
+        return cleaned
+          .replace(/[\\/:*?"<>|\s,]+/g, '_')
+          .replace(/_+/g, '_') // Avoid double underscores
+          .replace(/^_|_$/g, ''); // Remove leading/trailing underscores
       };
 
       // --- Processing Logic ---
@@ -188,11 +194,11 @@
 
             // 3. Construct new name
             const date = (data.rechnungsdatum && data.rechnungsdatum !== "unbekannt") ? data.rechnungsdatum : "0000-00-00";
-            const kunde = sanitizeFilename(data.kunde);
+            const aussteller = sanitizeFilename(data.aussteller);
             const betreff = sanitizeFilename(data.betreff);
             const nr = sanitizeFilename(data.rechnungsnummer);
 
-            const newName = `${date}_${kunde}_${betreff}_nr_${nr}.pdf`.replace(/_+/g, '_');
+            const newName = `0000_${date}_${aussteller}_${betreff}_Rechnungnr_${nr}.pdf`.replace(/_+/g, '_');
 
             updateStatus(`Fertig`, { 
               status: 'success', 
@@ -232,9 +238,9 @@
       };
 
       const askGemini = async (text) => {
-        const prompt = `Extract: rechnungsdatum (YYYY-MM-DD), kunde (clean name), betreff (max 3 words), rechnungsnummer. Return ONLY strict JSON.
+        const prompt = `Extract: rechnungsdatum (YYYY-MM-DD), aussteller (name of the company issuing the invoice, no legal suffixes like GmbH/AG), betreff (max 3 words desc of service), rechnungsnummer. Return ONLY strict JSON.
 If a field is missing, use "unbekannt" or "0000-00-00" for dates.
-JSON structure must be exact: { "rechnungsdatum": "...", "kunde": "...", "betreff": "...", "rechnungsnummer": "..." }
+JSON structure must be exact: { "rechnungsdatum": "...", "aussteller": "...", "betreff": "...", "rechnungsnummer": "..." }
 
 Invoice Text:
 """
