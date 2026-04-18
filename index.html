@@ -238,9 +238,19 @@
       };
 
       const askGemini = async (text) => {
-        const prompt = `Extract: rechnungsdatum (YYYY-MM-DD), aussteller (name of the company issuing the invoice, no legal suffixes like GmbH/AG), betreff (max 3 words desc of service), rechnungsnummer. Return ONLY strict JSON.
-If a field is missing, use "unbekannt" or "0000-00-00" for dates.
-JSON structure must be exact: { "rechnungsdatum": "...", "aussteller": "...", "betreff": "...", "rechnungsnummer": "..." }
+        const prompt = `Du bist ein hochpräziser Rechnungsprüfer. Extrahiere die folgenden Daten aus dem Text und antworte AUSSCHLIESSLICH mit einem strikten JSON-Objekt.
+Wenn ein Feld fehlt, nutze "unbekannt" (oder "0000-00-00" für das Datum).
+
+REGELN FÜR DIE EXTRAKTION:
+- rechnungsdatum: Das Haupt-Datum der Rechnung/Abrechnung (YYYY-MM-DD).
+- aussteller: Der Name des Unternehmens, das die Rechnung stellt (OHNE Rechtsformen wie GmbH, AG, Co. KG etc.).
+- betreff: Ein kurzes Schlagwort (max 3 Worte) zum inhaltlichen Kern der Leistung (z.B. "Tanken", "Fahrzeugkosten", "Material"). WICHTIG: Vermeide generische Begriffe wie "Gesamtsummenblatt".
+- rechnungsnummer: Die primäre Identifikationsnummer des Dokuments.
+  * Suche zuerst nach 'Abrechnungsnummer', 'Belegnummer' oder 'Rechnungsnummer' im oberen Drittel oder in der Haupt-Zusammenfassung.
+  * Eine 'Abrechnungsnummer' (z.B. bei Tankkarten) hat IMMER Vorrang vor einzelnen Rechnungsnummern aus Tabellenzeilen.
+  * Falls unsicher: Wähle die Nummer, die am häufigsten im Zusammenhang mit dem Datum genannt wird.
+
+JSON-Struktur MUSS exakt so aussehen: { "rechnungsdatum": "...", "aussteller": "...", "betreff": "...", "rechnungsnummer": "..." }
 
 Invoice Text:
 """
